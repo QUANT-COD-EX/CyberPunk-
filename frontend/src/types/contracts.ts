@@ -80,6 +80,10 @@ export interface ForensicAnalysisReport {
   ela_mean_mse: number;
   noise_variance_delta: number;
   copy_move_matches: number;
+  fft_spectral_anomaly_score?: number;
+  double_compression_detected?: boolean;
+  deepfake_signature_score?: number;
+  ai_generation_score?: number;
   heatmap_url?: string | null;
 }
 
@@ -93,6 +97,10 @@ export interface DocumentRecord {
   llm_accuracy?: number | null;
   llm_reasoning?: string | null;
   llm_provider?: string | null;
+  is_ai_generated?: boolean;
+  ai_generation_risk?: number;
+  ai_generation_reasoning?: string | null;
+  ai_generation_indicators?: string[];
   pages: number;
   render_dpi: number;
   status: DocumentStatus;

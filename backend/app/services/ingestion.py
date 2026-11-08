@@ -293,6 +293,10 @@ class IngestionService:
         doc.llm_accuracy = llm_res.accuracy
         doc.llm_reasoning = llm_res.reasoning
         doc.llm_provider = llm_res.provider
+        doc.is_ai_generated = llm_res.is_ai_generated
+        doc.ai_generation_risk = llm_res.ai_generation_risk
+        doc.ai_generation_reasoning = llm_res.ai_generation_rationale
+        doc.ai_generation_indicators = llm_res.ai_generation_indicators
 
         # Adopt LLM classification if heuristic was unsupported but LLM confidence is high
         if doc_type == DocumentType.UNSUPPORTED and llm_res.classification_type != DocumentType.UNSUPPORTED and llm_res.accuracy >= 0.85:

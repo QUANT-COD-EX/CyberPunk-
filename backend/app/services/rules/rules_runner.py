@@ -33,6 +33,11 @@ from backend.app.services.forensics.pdf_native import (
     check_baseline_alignment,
 )
 from backend.app.services.forensics.image_forensics import run_image_forensics_checks
+from backend.app.services.forensics.ai_generated import detect_ai_generated_document
+from backend.app.services.forensics.signature_forensics import (
+    analyze_signature_stroke_authenticity,
+    extract_signature_crop,
+)
 from pathlib import Path
 
 
@@ -43,37 +48,64 @@ def execute_forensics_checks(
     text_spans: Optional[List[Dict]] = None,
     ocr_words: Optional[List[Dict]] = None,
 ) -> List[Finding]:
-    """Executes PDF-native and image-level forensic checks."""
+    """Executes PDF-native, image-level, AI-generated, and signature forensic checks."""
     findings: List[Finding] = []
     suffix = doc_file_path.suffix.lower()
 
+    # 1. AI-generated document and synthetic content detection
+    doc_text_corpus = " ".join(f.raw_text or str(f.value) for f in doc.fields)
+    ai_findings, _, _, _ = detect_ai_generated_document(
+        text=doc_text_corpus,
+        doc_path=doc_file_path if suffix == ".pdf" else None,
+        doc_id=doc.doc_id,
+    )
+    findings.extend(ai_findings)
+
     if suffix == ".pdf":
-        # 1. Metadata anomalies (editing software)
+        # 2. Metadata anomalies (editing software)
         findings.extend(check_pdf_metadata(doc_file_path, doc.doc_id))
 
-        # 2. Incremental updates (%%EOF count)
+        # 3. Incremental updates (%%EOF count)
         findings.extend(check_incremental_updates(doc_file_path, doc.doc_id))
 
-        # 3. Font inconsistencies in sibling spans
+        # 4. Font inconsistencies in sibling spans
         findings.extend(check_font_inconsistencies(doc_file_path, doc.doc_id))
 
-        # 4. Hidden text (microscopic, white-on-white)
+        # 5. Hidden text (microscopic, white-on-white)
         hidden_results = check_hidden_text_spans(doc_file_path, doc.doc_id)
         for f, _ in hidden_results:
             findings.append(f)
 
-        # 5. Text-layer vs OCR diff if both are available
+        # 6. Text-layer vs OCR diff if both are available
         if text_spans and ocr_words:
             findings.extend(check_text_layer_vs_ocr_diff(text_spans, ocr_words, doc.doc_id, page_num=1))
 
-        # 6. Signature presence and field overlap check
+        # 7. Signature presence and field overlap check
         findings.extend(check_signature_region(doc_file_path, doc.doc_id, rendered_pages, doc.fields))
 
-        # 7. Baseline alignment disparity check
+        # 8. Baseline alignment disparity check
         findings.extend(check_baseline_alignment(doc_file_path, doc.doc_id))
 
-    # 8. Image forensics (weak supporting signal)
-    if rendered_pages:
+    # 9. Deepfake / Synthetic Signature Stroke Analysis
+    if rendered_pages and rendered_pages[0].exists():
+        sig_field = next((f for f in doc.fields if "signature" in f.name.lower()), None)
+        target_box = sig_field.bbox if sig_field else None
+        if not target_box and doc.type.value in ("loan_application", "declaration_15g", "payment_instruction"):
+            target_box = [100, 680, 450, 780]
+
+        if target_box:
+            crop = extract_signature_crop(rendered_pages[0], target_box)
+            if crop is not None:
+                sig_findings, _, _ = analyze_signature_stroke_authenticity(
+                    crop_bgr=crop,
+                    doc_id=doc.doc_id,
+                    page_num=1,
+                    bbox=target_box,
+                )
+                findings.extend(sig_findings)
+
+    # 10. Sophisticated Image forensics (ELA, 2D FFT, noise discrepancies, copy-move)
+    if rendered_pages and rendered_pages[0].exists():
         img_findings = run_image_forensics_checks(rendered_pages[0], doc.doc_id, page_num=1)
         findings.extend(img_findings)
 

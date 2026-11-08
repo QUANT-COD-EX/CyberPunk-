@@ -158,6 +158,25 @@ export const DocumentView: React.FC<DocumentViewProps> = ({
                 {currentDoc.scripts.filter((s) => s !== 'Latin').join(', ')}
               </span>
             )}
+
+            {/* AI Generated Document Badge */}
+            {currentDoc.is_ai_generated && (
+              <span
+                title={currentDoc.ai_generation_reasoning || 'AI-generated / synthetic content detected'}
+                style={{
+                  fontSize: '10px',
+                  fontWeight: '700',
+                  padding: '2px 6px',
+                  borderRadius: '3px',
+                  fontFamily: 'var(--font-mono)',
+                  backgroundColor: '#dc2626',
+                  color: '#FFFFFF',
+                  border: '1px solid #ef4444',
+                }}
+              >
+                🤖 AI-GENERATED ({((currentDoc.ai_generation_risk || 0) * 100).toFixed(0)}%)
+              </span>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

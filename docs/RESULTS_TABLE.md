@@ -20,14 +20,14 @@
 | `genuine_04` | Genuine | 0 | LOW | 0 | None | PASS (True Negative) |
 | `genuine_05` | Genuine | 0 | LOW | 0 | None | PASS (True Negative) |
 | `genuine_06` | Genuine | 0 | LOW | 0 | None | PASS (True Negative) |
-| `tampered_01_salary_edit` | Tampered | 2 | HIGH | 80 | salary_net_pay_calc, salary_credit_match | PASS (True Positive) |
+| `tampered_01_salary_edit` | Tampered | 2 | HIGH | 80 | salary_credit_match, salary_net_pay_calc | PASS (True Positive) |
 | `tampered_02_dob_edit` | Tampered | 1 | MEDIUM | 20 | dob_match | PASS (True Positive) |
 | `tampered_03_name_variant` | Tampered | 3 | LOW | 15 | name_match_conflict | PASS (True Positive) |
 | `tampered_05_bank_balance` | Tampered | 1 | MEDIUM | 30 | bank_balance_continuity | PASS (True Positive) |
-| `tampered_07_font_edit` | Tampered | 3 | HIGH | 100 | salary_net_pay_calc, font_anomaly, salary_credit_match | PASS (True Positive) |
-| `tampered_08_text_overlay` | Tampered | 2 | MEDIUM | 35 | producer_editing_tool, incremental_updates_flag | PASS (True Positive) |
+| `tampered_07_font_edit` | Tampered | 3 | HIGH | 100 | font_anomaly, salary_credit_match, salary_net_pay_calc | PASS (True Positive) |
+| `tampered_08_text_overlay` | Tampered | 2 | MEDIUM | 35 | incremental_updates_flag, producer_editing_tool | PASS (True Positive) |
 | `tampered_09_aadhaar_qr` | Tampered | 2 | HIGH | 55 | dob_match, aadhaar_qr_text_mismatch | PASS (True Positive) |
-| `tampered_10_prompt_injection` | Tampered | 5 | HIGH | 50 | prompt_injection_pattern, white_on_white_text_detected, incremental_updates_flag | PASS (True Positive) |
+| `tampered_10_prompt_injection` | Tampered | 5 | HIGH | 50 | incremental_updates_flag, white_on_white_text_detected, prompt_injection_pattern | PASS (True Positive) |
 | `tampered_11_income_inflate` | Tampered | 1 | MEDIUM | 20 | loan_income_vs_salary | PASS (True Positive) |
 | `tampered_12_15g_income` | Tampered | 1 | MEDIUM | 20 | g15_income_vs_salary | PASS (True Positive) |
 | `tampered_13_payment_absent` | Tampered | 1 | MEDIUM | 25 | payment_amount_not_in_bank | PASS (True Positive) |

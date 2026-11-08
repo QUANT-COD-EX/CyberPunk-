@@ -201,6 +201,14 @@ def process_investigation(inv_id: str, x_llm_api_key: Optional[str] = Header(Non
     cross_findings, _ = cross_engine.correlate_investigation(inv_id, updated_docs)
     all_findings.extend(cross_findings)
 
+    # Cross-document cloned deepfake signature detection
+    try:
+        from backend.app.services.forensics.signature_forensics import detect_cloned_signatures_cross_document
+        cloned_sig_findings = detect_cloned_signatures_cross_document(updated_docs, storage_mgr.rendered_dir)
+        all_findings.extend(cloned_sig_findings)
+    except Exception:
+        pass
+
     # 3. Apply three-tier escalation logic
     escalation_engine = EscalationEngine()
     escalated_findings = escalation_engine.escalate_findings(all_findings)

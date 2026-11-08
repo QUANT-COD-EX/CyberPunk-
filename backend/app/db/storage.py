@@ -118,6 +118,10 @@ class StorageManager:
                 ("llm_accuracy", "REAL"),
                 ("llm_reasoning", "TEXT"),
                 ("llm_provider", "TEXT"),
+                ("is_ai_generated", "INTEGER DEFAULT 0"),
+                ("ai_generation_risk", "REAL DEFAULT 0.0"),
+                ("ai_generation_reasoning", "TEXT"),
+                ("ai_generation_indicators", "TEXT DEFAULT '[]'"),
                 ("primary_language", "TEXT DEFAULT 'en'"),
                 ("detected_languages", "TEXT DEFAULT '[\"en\"]'"),
                 ("scripts", "TEXT DEFAULT '[\"Latin\"]'"),
@@ -250,9 +254,10 @@ class StorageManager:
                 INSERT OR REPLACE INTO documents (
                     doc_id, investigation_id, filename, file_path, sha256, type, type_confidence,
                     pages, render_dpi, status, error_message, llm_type, llm_accuracy, llm_reasoning, llm_provider,
+                    is_ai_generated, ai_generation_risk, ai_generation_reasoning, ai_generation_indicators,
                     primary_language, detected_languages, scripts, has_handwriting, handwriting_ratio, forensic_report
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     doc.doc_id,
@@ -270,6 +275,10 @@ class StorageManager:
                     doc.llm_accuracy,
                     doc.llm_reasoning,
                     doc.llm_provider,
+                    1 if doc.is_ai_generated else 0,
+                    doc.ai_generation_risk,
+                    doc.ai_generation_reasoning,
+                    json.dumps(doc.ai_generation_indicators),
                     doc.primary_language,
                     json.dumps(doc.detected_languages),
                     json.dumps(doc.scripts),
@@ -287,6 +296,7 @@ class StorageManager:
                 """
                 SELECT doc_id, filename, sha256, type, type_confidence, pages, render_dpi,
                        status, error_message, llm_type, llm_accuracy, llm_reasoning, llm_provider,
+                       is_ai_generated, ai_generation_risk, ai_generation_reasoning, ai_generation_indicators,
                        primary_language, detected_languages, scripts, has_handwriting, handwriting_ratio, forensic_report
                 FROM documents WHERE investigation_id = ?
                 """,
@@ -304,12 +314,17 @@ class StorageManager:
                     except ValueError:
                         llm_t = None
 
-                p_lang = r[13] if len(r) > 13 and r[13] else "en"
-                det_langs = json.loads(r[14]) if len(r) > 14 and r[14] else ["en"]
-                scripts = json.loads(r[15]) if len(r) > 15 and r[15] else ["Latin"]
-                has_hw = bool(r[16]) if len(r) > 16 and r[16] is not None else False
-                hw_ratio = float(r[17]) if len(r) > 17 and r[17] is not None else 0.0
-                f_report = ForensicAnalysisReport.model_validate(json.loads(r[18])) if len(r) > 18 and r[18] else None
+                is_ai = bool(r[13]) if len(r) > 13 and r[13] is not None else False
+                ai_risk = float(r[14]) if len(r) > 14 and r[14] is not None else 0.0
+                ai_reason = r[15] if len(r) > 15 and r[15] else None
+                ai_inds = json.loads(r[16]) if len(r) > 16 and r[16] else []
+
+                p_lang = r[17] if len(r) > 17 and r[17] else "en"
+                det_langs = json.loads(r[18]) if len(r) > 18 and r[18] else ["en"]
+                scripts = json.loads(r[19]) if len(r) > 19 and r[19] else ["Latin"]
+                has_hw = bool(r[20]) if len(r) > 20 and r[20] is not None else False
+                hw_ratio = float(r[21]) if len(r) > 21 and r[21] is not None else 0.0
+                f_report = ForensicAnalysisReport.model_validate(json.loads(r[22])) if len(r) > 22 and r[22] else None
 
                 docs.append(
                     DocumentRecord(
@@ -326,6 +341,10 @@ class StorageManager:
                         llm_accuracy=r[10],
                         llm_reasoning=r[11],
                         llm_provider=r[12],
+                        is_ai_generated=is_ai,
+                        ai_generation_risk=ai_risk,
+                        ai_generation_reasoning=ai_reason,
+                        ai_generation_indicators=ai_inds,
                         fields=fields,
                         primary_language=p_lang,
                         detected_languages=det_langs,
@@ -344,6 +363,7 @@ class StorageManager:
                 """
                 SELECT doc_id, filename, sha256, type, type_confidence, pages, render_dpi,
                        status, error_message, llm_type, llm_accuracy, llm_reasoning, llm_provider,
+                       is_ai_generated, ai_generation_risk, ai_generation_reasoning, ai_generation_indicators,
                        primary_language, detected_languages, scripts, has_handwriting, handwriting_ratio, forensic_report
                 FROM documents WHERE doc_id = ?
                 """,
@@ -360,12 +380,17 @@ class StorageManager:
                 except ValueError:
                     llm_t = None
 
-            p_lang = r[13] if len(r) > 13 and r[13] else "en"
-            det_langs = json.loads(r[14]) if len(r) > 14 and r[14] else ["en"]
-            scripts = json.loads(r[15]) if len(r) > 15 and r[15] else ["Latin"]
-            has_hw = bool(r[16]) if len(r) > 16 and r[16] is not None else False
-            hw_ratio = float(r[17]) if len(r) > 17 and r[17] is not None else 0.0
-            f_report = ForensicAnalysisReport.model_validate(json.loads(r[18])) if len(r) > 18 and r[18] else None
+            is_ai = bool(r[13]) if len(r) > 13 and r[13] is not None else False
+            ai_risk = float(r[14]) if len(r) > 14 and r[14] is not None else 0.0
+            ai_reason = r[15] if len(r) > 15 and r[15] else None
+            ai_inds = json.loads(r[16]) if len(r) > 16 and r[16] else []
+
+            p_lang = r[17] if len(r) > 17 and r[17] else "en"
+            det_langs = json.loads(r[18]) if len(r) > 18 and r[18] else ["en"]
+            scripts = json.loads(r[19]) if len(r) > 19 and r[19] else ["Latin"]
+            has_hw = bool(r[20]) if len(r) > 20 and r[20] is not None else False
+            hw_ratio = float(r[21]) if len(r) > 21 and r[21] is not None else 0.0
+            f_report = ForensicAnalysisReport.model_validate(json.loads(r[22])) if len(r) > 22 and r[22] else None
 
             return DocumentRecord(
                 doc_id=r[0],
@@ -381,6 +406,10 @@ class StorageManager:
                 llm_accuracy=r[10],
                 llm_reasoning=r[11],
                 llm_provider=r[12],
+                is_ai_generated=is_ai,
+                ai_generation_risk=ai_risk,
+                ai_generation_reasoning=ai_reason,
+                ai_generation_indicators=ai_inds,
                 fields=fields,
                 primary_language=p_lang,
                 detected_languages=det_langs,

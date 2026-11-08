@@ -148,6 +148,26 @@ EXPLANATION_TEMPLATES: Dict[str, Dict[str, str]] = {
         "why_it_matters": "Word spans sharing a logical line with irregular vertical baseline displacement suggest non-native text splicing or localized patching.",
         "next_steps": "Inspect vector PDF structure and high-resolution scan magnification to verify typographic flow.",
     },
+    "ai_generated_document_detected": {
+        "why_it_matters": "Institutional identity and financial documentation must originate from verified core banking, payroll, or governmental systems rather than generative AI or synthetic templates.",
+        "next_steps": "Request primary source records directly from the issuing authority or certified portal (e.g. DigiLocker, ITD portal, or issuing bank branch).",
+    },
+    "synthetic_signature_detected": {
+        "why_it_matters": "Natural human pen executions display ballistic acceleration and pressure fluctuations. Constant stroke thickness and diffusion halos indicate synthetic vector reproduction or digital script font rendering.",
+        "next_steps": "Inspect physical document under side-lighting or request in-person signature verification at an authorized branch.",
+    },
+    "cloned_signature_replication": {
+        "why_it_matters": "Biometric motor variability guarantees that human signatures never repeat identically down to stroke curvature and pixel geometry across distinct documents. Identical signatures confirm digital cut-and-paste manipulation.",
+        "next_steps": "Compare physical wet-ink originals across all submitted application instruments and obtain fresh wet signatures witnessed by an officer.",
+    },
+    "fft_spectral_discontinuity": {
+        "why_it_matters": "Periodic high-frequency spectral spikes in the 2D Fourier domain indicate generative neural inpainting, diffusion synthesis grids, or artificial resampling.",
+        "next_steps": "Examine original uncompressed scan file or request the document in its native electronic PDF format.",
+    },
+    "double_compression_discontinuity": {
+        "why_it_matters": "Discontinuities across 8x8 DCT block boundaries reveal that image patches were spliced from another source and subjected to secondary compression.",
+        "next_steps": "Inspect localized coordinate regions under magnification for compression ghosting and color palette shifts.",
+    },
 }
 
 

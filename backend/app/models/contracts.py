@@ -119,6 +119,10 @@ class ForensicAnalysisReport(BaseModel):
     ela_mean_mse: float = 0.0
     noise_variance_delta: float = 0.0
     copy_move_matches: int = 0
+    fft_spectral_anomaly_score: float = 0.0
+    double_compression_detected: bool = False
+    deepfake_signature_score: float = 0.0
+    ai_generation_score: float = 0.0
     heatmap_url: Optional[str] = None
 
 
@@ -132,6 +136,10 @@ class DocumentRecord(BaseModel):
     llm_accuracy: Optional[float] = None
     llm_reasoning: Optional[str] = None
     llm_provider: Optional[str] = None
+    is_ai_generated: bool = False
+    ai_generation_risk: float = 0.0
+    ai_generation_reasoning: Optional[str] = None
+    ai_generation_indicators: List[str] = []
     pages: int = 1
     render_dpi: int = 150
     status: DocumentStatus = DocumentStatus.UPLOADED

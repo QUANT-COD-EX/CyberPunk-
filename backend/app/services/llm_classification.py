@@ -23,22 +23,29 @@ from pydantic import BaseModel
 from backend.app.models.contracts import DocumentType
 
 SYSTEM_PROMPT = """You are an expert financial and identity document forensics classifier.
-Analyze the provided text extracted from a document and determine which of the following 7 classification types it belongs to:
-1. 'aadhaar': Republic of India Aadhaar identity card / UIDAI document.
-2. 'pan': Indian Income Tax Department Permanent Account Number (PAN) Card.
-3. 'salary_slip': Corporate payroll payslip or salary voucher with earnings/deductions/net pay.
-4. 'bank_statement': Bank account statement with opening/closing balances and transaction ledger.
-5. 'loan_application': Loan Application form requesting financing with declared income, loan amount, purpose.
-6. 'declaration_15g': Form No. 15G declaration under section 197A(1) of Income Tax Act for nil TDS.
-7. 'payment_instruction': Fund transfer instruction, NEFT/RTGS transaction mandate or payment voucher.
-8. 'unsupported': Any document not fitting the above 7 categories.
+Analyze the provided text extracted from a document and determine:
+1. Which of the 7 classification types it belongs to:
+   - 'aadhaar': Republic of India Aadhaar identity card / UIDAI document.
+   - 'pan': Indian Income Tax Department Permanent Account Number (PAN) Card.
+   - 'salary_slip': Corporate payroll payslip or salary voucher with earnings/deductions/net pay.
+   - 'bank_statement': Bank account statement with opening/closing balances and transaction ledger.
+   - 'loan_application': Loan Application form requesting financing with declared income, loan amount, purpose.
+   - 'declaration_15g': Form No. 15G declaration under section 197A(1) of Income Tax Act for nil TDS.
+   - 'payment_instruction': Fund transfer instruction, NEFT/RTGS transaction mandate or payment voucher.
+   - 'unsupported': Any document not fitting the above 7 categories.
+2. Authenticity & AI-Generation Scan:
+   Inspect for signs of AI-generated content (e.g., ChatGPT/Claude disclaimers, simulated sample labels, generic placeholder tokens like [Insert Company Name], repetitive uniform stylometry, or synthetic identifier sequences).
 
 You must respond ONLY with a valid JSON object in this exact schema:
 {
   "classification_type": "<one of: aadhaar, pan, salary_slip, bank_statement, loan_application, declaration_15g, payment_instruction, unsupported>",
   "accuracy": <float between 0.0 and 1.0 indicating your confidence>,
   "reasoning": "<clear 1-3 sentence explanation citing the key headers, entities, and structure that verify this classification>",
-  "key_indicators": ["<indicator 1>", "<indicator 2>", "<indicator 3>"]
+  "key_indicators": ["<indicator 1>", "<indicator 2>", "<indicator 3>"],
+  "is_ai_generated": <true if AI generation or synthetic template hallmarks are detected, else false>,
+  "ai_generation_risk": <float between 0.0 and 1.0>,
+  "ai_generation_indicators": ["<ai indicator 1>", "<ai indicator 2>"],
+  "ai_generation_rationale": "<1-2 sentence explanation of document authenticity or detected AI generation patterns>"
 }
 """
 
@@ -49,6 +56,10 @@ class LLMClassificationResult(BaseModel):
     reasoning: str
     provider: str
     key_indicators: List[str] = []
+    is_ai_generated: bool = False
+    ai_generation_risk: float = 0.0
+    ai_generation_indicators: List[str] = []
+    ai_generation_rationale: str = ""
 
 
 def _normalize_doc_type(raw_type: str) -> DocumentType:
@@ -95,6 +106,10 @@ def classify_with_gemini(text: str, api_key: str) -> Optional[LLMClassificationR
             reasoning=str(data.get("reasoning", "Classified by Gemini 1.5 Flash.")),
             provider="Google Gemini 1.5 Flash",
             key_indicators=data.get("key_indicators", []),
+            is_ai_generated=bool(data.get("is_ai_generated", False)),
+            ai_generation_risk=min(1.0, max(0.0, float(data.get("ai_generation_risk", 0.0)))),
+            ai_generation_indicators=data.get("ai_generation_indicators", []),
+            ai_generation_rationale=str(data.get("ai_generation_rationale", "")),
         )
     except Exception as e:
         return None
@@ -122,6 +137,10 @@ def classify_with_groq(text: str, api_key: str) -> Optional[LLMClassificationRes
             reasoning=str(data.get("reasoning", "Classified by Groq Llama 3.3.")),
             provider="Groq Llama 3.3 (70B)",
             key_indicators=data.get("key_indicators", []),
+            is_ai_generated=bool(data.get("is_ai_generated", False)),
+            ai_generation_risk=min(1.0, max(0.0, float(data.get("ai_generation_risk", 0.0)))),
+            ai_generation_indicators=data.get("ai_generation_indicators", []),
+            ai_generation_rationale=str(data.get("ai_generation_rationale", "")),
         )
     except Exception:
         return None
@@ -303,6 +322,17 @@ def classify_with_local_llm(text: str) -> LLMClassificationResult:
 
     best_type, best_score = max(scores.items(), key=lambda item: item[1])
 
+    # Run offline AI-generation and authenticity scan
+    try:
+        from backend.app.services.forensics.ai_generated import detect_ai_generated_document
+        _, ai_risk, ai_inds, ai_rationale = detect_ai_generated_document(text, None, "OFFLINE_DOC")
+        is_ai = ai_risk >= 0.50
+    except Exception:
+        is_ai = False
+        ai_risk = 0.0
+        ai_inds = []
+        ai_rationale = "Authentic financial document layout."
+
     # Threshold for confident classification
     if best_score < 40:
         return LLMClassificationResult(
@@ -311,6 +341,10 @@ def classify_with_local_llm(text: str) -> LLMClassificationResult:
             reasoning="Document text does not exhibit sufficient characteristic indicators of supported financial or identity document types.",
             provider="Local Semantic Engine (Offline)",
             key_indicators=[],
+            is_ai_generated=is_ai,
+            ai_generation_risk=ai_risk,
+            ai_generation_indicators=ai_inds,
+            ai_generation_rationale=ai_rationale,
         )
 
     # Calibrate accuracy score between 0.88 and 0.99 based on indicator density
@@ -330,6 +364,10 @@ def classify_with_local_llm(text: str) -> LLMClassificationResult:
         reasoning=reasoning,
         provider="Local Semantic Engine (Offline)",
         key_indicators=hits[:6],
+        is_ai_generated=is_ai,
+        ai_generation_risk=ai_risk,
+        ai_generation_indicators=ai_inds,
+        ai_generation_rationale=ai_rationale,
     )
 
 

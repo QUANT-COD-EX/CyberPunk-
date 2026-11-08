@@ -105,6 +105,16 @@ export const InvestigationAnalyticsView: React.FC<InvestigationAnalyticsViewProp
             {analytics?.handwriting_stats.total_handwritten_fields || 0} handwritten fields
           </div>
         </div>
+
+        <div style={{ borderLeft: '3px solid #06b6d4', paddingLeft: '10px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>AI & SIGNATURE FORENSICS</div>
+          <div style={{ fontSize: '20px', fontWeight: '800', color: documents.some((d) => d.is_ai_generated) ? '#ef4444' : '#10b981' }}>
+            {documents.filter((d) => d.is_ai_generated).length > 0
+              ? `${documents.filter((d) => d.is_ai_generated).length} AI-Gen Alert`
+              : 'Authentic'}
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Deepfake signature & AI scan</div>
+        </div>
       </div>
 
       {/* Sub-navigation Controls */}
@@ -261,7 +271,7 @@ export const InvestigationAnalyticsView: React.FC<InvestigationAnalyticsViewProp
                   Advanced Multi-Signal Tampering Localization
                 </h3>
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Error Level Analysis (ELA) &bull; High-Pass Laplacian Noise Residuals &bull; Copy-Move Matching
+                  Error Level Analysis (ELA) &bull; 2D-FFT Spectral Frequency &bull; Noise Residuals &bull; Copy-Move Clones &bull; Deepfake Signatures &bull; AI Authenticity
                 </span>
               </div>
 
@@ -341,7 +351,7 @@ export const InvestigationAnalyticsView: React.FC<InvestigationAnalyticsViewProp
             </div>
 
             {/* Metric Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '16px' }}>
               <div style={{ padding: '8px 12px', borderRadius: '4px', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border-color)' }}>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>TAMPER PROBABILITY</div>
                 <div style={{ fontSize: '18px', fontWeight: '800', color: (selectedForensic?.tamper_score || 0) > 0.6 ? '#ef4444' : '#10b981' }}>
@@ -355,6 +365,12 @@ export const InvestigationAnalyticsView: React.FC<InvestigationAnalyticsViewProp
                 </div>
               </div>
               <div style={{ padding: '8px 12px', borderRadius: '4px', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>2D-FFT SPECTRAL SPIKE</div>
+                <div style={{ fontSize: '18px', fontWeight: '800', color: (selectedForensic?.fft_spectral_anomaly_score || 0) > 4.5 ? '#f59e0b' : 'var(--text-main)' }}>
+                  {selectedForensic ? `${selectedForensic.fft_spectral_anomaly_score || 0.0}\u03c3` : '0.0\u03c3'}
+                </div>
+              </div>
+              <div style={{ padding: '8px 12px', borderRadius: '4px', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border-color)' }}>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>NOISE DISCREPANCY</div>
                 <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-main)' }}>
                   {selectedForensic ? `${selectedForensic.noise_variance_delta}\u03c3` : '0.0\u03c3'}
@@ -364,6 +380,12 @@ export const InvestigationAnalyticsView: React.FC<InvestigationAnalyticsViewProp
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>COPY-MOVE CLONES</div>
                 <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-main)' }}>
                   {selectedForensic?.copy_move_matches || 0}
+                </div>
+              </div>
+              <div style={{ padding: '8px 12px', borderRadius: '4px', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>AI GENERATION RISK</div>
+                <div style={{ fontSize: '18px', fontWeight: '800', color: selectedDoc.is_ai_generated ? '#ef4444' : '#10b981' }}>
+                  {selectedDoc.is_ai_generated ? `${((selectedDoc.ai_generation_risk || 0) * 100).toFixed(0)}%` : '0%'}
                 </div>
               </div>
             </div>

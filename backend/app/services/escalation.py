@@ -59,6 +59,11 @@ RULE_POINTS_MATRIX: Dict[str, int] = {
     "signature_region_empty": 5,
     "signature_placement_overlap": 10,
     "baseline_alignment_anomaly": 10,
+    "ai_generated_document_detected": 25,
+    "synthetic_signature_detected": 20,
+    "cloned_signature_replication": 30,
+    "fft_spectral_discontinuity": 10,
+    "double_compression_discontinuity": 10,
 }
 
 DEFAULT_POINTS = 10
